@@ -193,7 +193,7 @@ void findData()
     
     TemplatedArray<NvraRecord>* found = new TemplatedArray<NvraRecord>();         //holds matches found
     NvraComparator* c = new NvraComparator(searchField);
-    NvraRecord* rec = new NvraRecord;
+    NvraRecord* rec = new NvraRecord();
     
     if (searchField != 3 && searchField != 11 && searchField != 12)               //if it is an int value
     {
@@ -329,32 +329,46 @@ void records()
 
 void hashTable()
 {
-    NvraHasher* h = new NvraHasher();
+    NvraHasher h = NvraHasher();
     unsigned long size = arr->getSize();
     unsigned long i = 0;
-    HashTable<NvraRecord>* table = new HashTable<NvraRecord>(c, h, size);
+    HashTable<NvraRecord>* hashT = new HashTable<NvraRecord>(c, &h, size);
+    
     while(i<size)
     {
-        cout << i << endl;
         NvraRecord item = arr->get(i);
-        NvraRecord* ptr = &item;
-        table->insert(ptr);
+        NvraRecord *ptr = &item;
+        
+        cout << item << endl;
+        cout << ptr << endl;
+        cout << *ptr << endl;
+        
+        hashT->insert(ptr);
         i++;
     }
-
-    int hashSize = static_cast<int>(table->getSize());
+//    while(i<size)
+//    {
+//        NvraRecord *item = new NvraRecord(arr->get(i));
+//
+//        cout << item << endl;
+//        cout << *item << endl;
+//
+//        hashT->insert(item);
+//        i++;
+//    }
+    int hashSize = static_cast<int>(hashT->getSize());
     string fname;
     cout << "Enter output file name: ";
     getline(cin, fname);
     if (fname == "")
     {
-        cout << table << endl << stats(hashSize) << endl;
+        cout << *hashT << endl << stats(hashSize) << endl;
     }
     else
     {
         ofstream outFile;
         outFile.open(fname);
-        outFile << table << endl << stats(hashSize) << endl;
+        outFile << *hashT << endl << stats(hashSize) << endl;
         outFile.close();
     }
     menu();
@@ -363,7 +377,7 @@ void hashTable()
 NvraRecord* getItems(string &row)
 {
     string token;                         //token is the delimited item
-    NvraRecord* rec = new NvraRecord;     //this nvraRecord will hold all the tokens
+    NvraRecord* rec = new NvraRecord();     //this nvraRecord will hold all the tokens
     
     row.push_back(',');                   //with the ending ',' getline will still read the last column with the ',' delimiter
     istringstream buf(row);               //turns string into istringstream so that it can be delimited
@@ -502,11 +516,11 @@ void list2array()
     OULinkedListEnumerator<NvraRecord> en = list->enumerator();
     while(en.hasNext())
     {
-        NvraRecord rec = en.currentData();
+        NvraRecord rec = *en.currentData();
         new_arr->add(&rec);
         en.next();
     }
-    NvraRecord rec = en.currentData();
+    NvraRecord rec = *en.currentData();
     new_arr->add(&rec);
     
     

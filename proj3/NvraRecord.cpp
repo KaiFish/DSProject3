@@ -39,6 +39,26 @@ void NvraRecord::addString(string string)                                       
   strCtr++;
 }
 
+NvraRecord::NvraRecord()
+{
+    
+}
+
+NvraRecord::NvraRecord(const NvraRecord& rec)
+{
+    while(numCtr<MAX_NUMS)
+    {
+        nums[numCtr] = rec.nums[numCtr];
+        numCtr++;
+    }
+    
+    while(strCtr<MAX_STRINGS)
+    {
+        strings[strCtr] = rec.strings[strCtr];
+        strCtr++;
+    }
+}
+
 unsigned int NvraRecord::getNum(unsigned int index) const                       // returns (copy of) num at index in array
 {
   return nums[index];

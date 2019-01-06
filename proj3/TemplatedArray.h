@@ -150,9 +150,9 @@ template<class T> T TemplatedArray<T>::get(unsigned long i) const 							//retur
 {
   if (size == 0 || i > size - 1)
   {
-    throw new ExceptionIndexOutOfRange;
+    throw ExceptionIndexOutOfRange();
   }
-  return data[i];
+  return T(data[i]);
 }
 
 template<class T> unsigned long TemplatedArray<T>::getCapacity() const   				//returns the current capacity of the array

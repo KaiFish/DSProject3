@@ -23,15 +23,15 @@ class HashTable {
     friend class HashTableEnumerator;                        // necessary to allow the enumerator to access the table's private data
 
 private:
-    Comparator<T>* comparator = NULL;                        // used to determine item equality
-    Hasher<T>* hasher = NULL;                                // used to compute hash value
+    Comparator<T>* comparator = nullptr;                        // used to determine item equality
+    Hasher<T>* hasher = nullptr;                                // used to compute hash value
     unsigned long size = 0;                                    // actual number of items currently in hash table
     float maxLoadFactor = DEFAULT_MAX_LOAD_FACTOR;            // the load factor used to determine when to increase the table size
     float minLoadFactor = DEFAULT_MIN_LOAD_FACTOR;            // the load factor used to determine when to decrease the table size
     unsigned int scheduleIndex = DEFAULT_SCHEDULE_INDEX;    // the index of current location in the size schedule
     unsigned long baseCapacity = DEFAULT_BASE_CAPACITY;        // the size of the array
     unsigned long totalCapacity = baseCapacity;                // the size of the array plus chains of more than one link
-    OULinkedList<T>** table = NULL;                            // table will be an array of pointers to OULinkedLists of type T
+    OULinkedList<T>** table = nullptr;                            // table will be an array of pointers to OULinkedLists of type T
     unsigned int capacity();
     OULinkedList<T>** makeTable();
     void add(const T* item, OULinkedList<T>** t);
@@ -80,27 +80,29 @@ template <typename T> std::ostream& operator<<(std::ostream& os, const HashTable
     while(i<ht.baseCapacity)
     {
         OULinkedList<T>* temp = ht.table[i];
-        if(temp->first == nullptr)
+        OULinkedListEnumerator<T> e = temp->enumerator();
+        T* ptr = e.currentData();
+        if(ptr == nullptr)
         {
             i++;
         }
-        else if(temp->first == temp->last)
+        else if(e.hasNext())
         {
-            os << i << ": " << temp->get() << std::endl << '\n';
-        }
-        else
-        {
-            OULinkedListEnumerator<T> e = temp->enumerator();
-            os << i << ": " << temp->get() << std::endl << '\n';
+            os << i << ": " << *ptr << std::endl << '\n';       //print first
             e.next();
             while(e.hasNext())
             {
-                T item = e.currentData();
+                T item = *e.currentData();
                 os << "OVERFLOW: " << item << std::endl << '\n';
                 e.next();
             }
-            T item = e.currentData();
+            T item = *e.currentData();                          //print last
             os << "OVERFLOW: " << item << std::endl << '\n';
+            i++;
+        }
+        else
+        {
+            os << i << ": " << *ptr << std::endl << '\n';       //print only item
             i++;
         }
     }
@@ -119,8 +121,8 @@ template <typename T> HashTable<T>::HashTable(Comparator<T>* comparator, Hasher<
 {
     this->comparator = comparator;
     this->hasher = hasher;
-    this->table = this->makeTable();
     this->size = size;
+    this->table = this->makeTable();
     this->maxLoadFactor = maxLoadFactor;
     this->minLoadFactor = minLoadFactor;
 }
@@ -160,15 +162,16 @@ template <typename T> unsigned int HashTable<T>::capacity()
 template <typename T> OULinkedList<T>** HashTable<T>::makeTable()
 {
     this->baseCapacity = this->capacity();
-    OULinkedList<T>** arr = new OULinkedList<T>*[this->baseCapacity];
+    OULinkedList<T>** tb = new OULinkedList<T>*[this->baseCapacity];
     unsigned long i = 0;
+    
     while(i<this->baseCapacity)
     {
         OULinkedList<T>* neu = new OULinkedList<T>(this->comparator);
-        arr[i] = neu;
+        tb[i] = neu;
         i++;
     }
-    return arr;
+    return tb;
 }
 
 template <typename T> void HashTable<T>::add(const T* item, OULinkedList<T>** t)
@@ -181,21 +184,32 @@ template <typename T> void HashTable<T>::add(const T* item, OULinkedList<T>** t)
 
 template <typename T> bool HashTable<T>::has(const T* item)
 {
-    bool found = true;
-    if (this->size < 1)
+    bool found = false;
+    unsigned long index = this->encode(item);
+    OULinkedList<T>* temp = this->table[index];
+    OULinkedListEnumerator<T> e = temp->enumerator();
+    while(e.hasNext())
     {
-        found = false;
+        T item2 = *e.currentData();
+        int c = this->comparator->compare(*item, item2);
+        if(c == 0)
+        {
+            found = true;
+            return found;
+        }
+        e.next();
     }
-    else
+    T* ptr = e.currentData();
+    if(ptr == nullptr)
     {
-        try
-        {
-            find(item);
-        }
-        catch (ExceptionHashTableAccess& e)
-        {
-            found = false;
-        }
+        return found;
+    }
+    T item2 = *ptr;                      //check last
+    int c = this->comparator->compare(*item, item2);
+    if(c == 0)
+    {
+        found = true;
+        return found;
     }
     return found;
 }
@@ -240,14 +254,12 @@ template <typename T> void HashTable<T>::rehash()
             OULinkedListEnumerator<T> e = temp->enumerator();
             while(e.hasNext())
             {
-                T item = e.currentData();
-                T* ptr = &item;
-                this->add(ptr, neu);
+                T* item = e.currentData();
+                this->add(item, neu);
                 e.next();
             }
-            T item = e.currentData();
-            T* ptr = &item;
-            this->add(ptr, neu);
+            T* item = e.currentData();
+            this->add(item, neu);
             i++;
         }
     }
@@ -256,6 +268,7 @@ template <typename T> void HashTable<T>::rehash()
 
 template <typename T> bool HashTable<T>::insert(const T* item)
 {
+    cout << item << endl;
     if(this->has(item))
     {
         return false;
@@ -331,7 +344,7 @@ template <typename T> unsigned long HashTable<T>::getTotalCapacity() const
 
 template <typename T> float HashTable<T>::getLoadFactor() const
 {
-    float loadFactor = static_cast<float>(this->size/this->baseCapacity);
+    float loadFactor = ((float)this->size / (float)this->baseCapacity);
     return loadFactor;
 }
 

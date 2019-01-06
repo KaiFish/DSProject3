@@ -18,7 +18,7 @@ public:
     T next();
     T peek() const;
     OULink<T>* curr();
-    T currentData();
+    T* currentData();
 };
 template <typename T> OULinkedListEnumerator<T>::OULinkedListEnumerator(OULink<T>* first)
 {
@@ -66,9 +66,14 @@ template <typename T> OULink<T>* OULinkedListEnumerator<T>::curr()
     return this->current;
 }
 
-template <typename T> T OULinkedListEnumerator<T>::currentData()
+template <typename T> T* OULinkedListEnumerator<T>::currentData()
 {
-    return *this->current->data;
+    OULink<T>* curr = this->current;
+    if(curr == nullptr)
+    {
+        return nullptr;
+    }
+    return curr->data;
 }
 
 #endif // !OU_LINKED_LIST_ENUMERATOR

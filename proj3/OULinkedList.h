@@ -60,11 +60,11 @@ template <typename T> std::ostream& operator<<(std::ostream& os, const OULinkedL
     OULinkedListEnumerator<T> e = ll.enumerator();
     while(e.hasNext())
     {
-        T item = e.currentData();
+        T item = *e.currentData();
         os << item << endl;
         e.next();
     }
-    T item = e.currentData();
+    T item = *e.currentData();
     os << item << endl;
     return os;
 }

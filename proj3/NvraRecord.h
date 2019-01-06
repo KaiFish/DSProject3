@@ -23,7 +23,10 @@ public:
 	// the following methods must throw new ExceptionIndexOutOfRange if attempts are made to add too many values
 	void addNum(unsigned int num);							// puts num in array, increments counter
 	void addString(std::string string);						// puts string in array, increments counter
-
+    
+    NvraRecord();
+    NvraRecord(const NvraRecord& rec);
+    
 	// the following methods must throw new ExceptionIndexOutOfRange if index is too large
 	unsigned int getNum(unsigned int index) const;			// returns (copy of) num at index in array
 	std::string getString(unsigned int index) const;		// returns (copy of) string at index in array
