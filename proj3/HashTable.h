@@ -268,7 +268,6 @@ template <typename T> void HashTable<T>::rehash()
 
 template <typename T> bool HashTable<T>::insert(const T* item)
 {
-    cout << item << endl;
     if(this->has(item))
     {
         return false;

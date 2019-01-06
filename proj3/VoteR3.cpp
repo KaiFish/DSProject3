@@ -336,14 +336,11 @@ void hashTable()
     
     while(i<size)
     {
-        NvraRecord item = arr->get(i);
-        NvraRecord *ptr = &item;
-        
+        NvraRecord* item = new NvraRecord(arr->get(i));
+
         cout << item << endl;
-        cout << ptr << endl;
-        cout << *ptr << endl;
         
-        hashT->insert(ptr);
+        hashT->insert(item);
         i++;
     }
 //    while(i<size)
