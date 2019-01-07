@@ -30,7 +30,7 @@ Sorter<NvraRecord>* s = new Sorter<NvraRecord>();
 TemplatedArray<NvraRecord>* arr = new TemplatedArray<NvraRecord>();
 bool isSorted = true;                                                          //flag for sort status
 int sortField = 0;
-
+HashTable<NvraRecord>* hashT;
 
 void loadData();
 void menu();
@@ -47,6 +47,9 @@ bool isValid(NvraRecord& rec);                                                  
 bool isInvalidData(NvraRecord& rec, int& line, vector<int>& fileIDs);           //checks for any invalid data, prints when found
 void transfer(string fileName, fstream& inF);                                   //retrieves records from files
 void list2array();
+void makeHash();
+void mergeHash();
+void purgeHash();
 int extract();
 int convert(int num);                                                           //converts standard column to index needed for NvraRecord
 NvraRecord* fakeRec(int col, string search);                                    //converts search query into a whole array for comparator
@@ -57,11 +60,13 @@ string stats(int size);
 
 int main()
 {
+    hashT = nullptr;
     loadData();
     if(list->getSize() == 0)
     {
         return 42;
     }
+    makeHash();
     menu();
     return 0;
 }
@@ -121,6 +126,7 @@ void menu()
     else if(choice == "m" || choice == "merge")
     {
         loadData();
+        mergeHash();
         menu();
     }
     else if(choice == "p" || choice == "purge")
@@ -137,7 +143,7 @@ void menu()
     }
     else if(choice == "q" || choice == "quit")
     {
-        cout << endl << "Thanks for using VoteR." << endl;
+        cout << "Thanks for using VoteR." << endl;
         return;
     }
     else
@@ -304,6 +310,7 @@ void purgeData()
         }
     }
     list2array();
+    //bpurgeHash();
     menu();
 }
 
@@ -329,37 +336,13 @@ void records()
 
 void hashTable()
 {
-    NvraHasher h = NvraHasher();
-    unsigned long size = arr->getSize();
-    unsigned long i = 0;
-    HashTable<NvraRecord>* hashT = new HashTable<NvraRecord>(c, &h, size);
-    
-    while(i<size)
-    {
-        NvraRecord* item = new NvraRecord(arr->get(i));
-
-        cout << item << endl;
-        
-        hashT->insert(item);
-        i++;
-    }
-//    while(i<size)
-//    {
-//        NvraRecord *item = new NvraRecord(arr->get(i));
-//
-//        cout << item << endl;
-//        cout << *item << endl;
-//
-//        hashT->insert(item);
-//        i++;
-//    }
     int hashSize = static_cast<int>(hashT->getSize());
     string fname;
     cout << "Enter output file name: ";
     getline(cin, fname);
     if (fname == "")
     {
-        cout << *hashT << endl << stats(hashSize) << endl;
+        cout << *hashT << endl <<  stats(hashSize) << endl;
     }
     else
     {
@@ -523,6 +506,39 @@ void list2array()
     
     arr = new_arr;
 }
+
+void makeHash()
+{
+    NvraHasher h = NvraHasher();
+    unsigned long size = arr->getSize();
+    unsigned long i = 0;
+    hashT = new HashTable<NvraRecord>(c, &h, size);
+    
+    while(i<size)
+    {
+        NvraRecord* item = new NvraRecord(arr->get(i));
+        hashT->insert(item);
+        i++;
+    }
+}
+
+void mergeHash()
+{
+    unsigned long size = arr->getSize();
+    unsigned long i = 0;
+    while(i<size)
+    {
+        NvraRecord* item = new NvraRecord(arr->get(i));
+        bool has = hashT->replace(item);
+        if(!has)
+        {
+            hashT->insert(item);
+        }
+        i++;
+    }
+}
+
+//void purgeHash();
 
 int extract()                                                                   //this code is also used in NvraComparator
 {
