@@ -6,9 +6,8 @@
 #include "OULinkedList.h"
 #include "OULinkedListEnumerator.h"
 #include "Hasher.h"
+#include "TemplatedArray.h"
 #include <iostream>
-#include <chrono>
-#include <thread>
 
 const unsigned int SCHEDULE_SIZE = 25;            // the number of items in the size schedule
 const unsigned int SCHEDULE[SCHEDULE_SIZE] = { 1, 2, 5, 11, 23, 53, 107, 223, 449, 907, 1823, 3659, 7309, 14621, 29243, 58511, 117023, 234067, 468157, 936319, 1872667, 3745283, 7490573, 14981147, 29962343 };        // the size schedule (all primes)
@@ -35,6 +34,7 @@ private:
     unsigned long totalCapacity = baseCapacity;                // the size of the array plus chains of more than one link
     unsigned long cap = DEFAULT_BASE_CAPACITY;
     OULinkedList<T>** table = nullptr;                            // table will be an array of pointers to OULinkedLists of type T
+    
     void setCapacity(unsigned long neededSize);
     OULinkedList<T>** makeTable();
     void add(const T* item, OULinkedList<T>** t);
@@ -72,6 +72,7 @@ public:
     // if an equivalent item is not present, throw a new ExceptionHashTableAccess
     T find(const T* item) const;
     
+    void fill(TemplatedArray<T>& arr);
     unsigned long getSize() const;                        // returns the current number of items in the table
     unsigned long getBaseCapacity() const;                // returns the current base capacity of the table
     unsigned long getTotalCapacity() const;                // returns the current total capacity of the table
@@ -193,7 +194,8 @@ template <typename T> void HashTable<T>::add(const T* item, OULinkedList<T>** t)
     OULinkedList<T>* temp = t[index];
     OULinkedListEnumerator<T> e = temp->enumerator();
     T* ptr = e.currentData();
-    if(temp->insert(item) && ptr != nullptr)
+    temp->insert(item);
+    if(ptr != nullptr)
     {
         this->totalCapacity++;
     }
@@ -315,12 +317,9 @@ template <typename T> bool HashTable<T>::insert(const T* item)
     }
     this->add(item, this->table);
     this->size++;
-    if(this->totalCapacity > this->baseCapacity || getLoadFactor() > this->maxLoadFactor)
+    if(this->resize(this->getLoadFactor()))
     {
-        if(this->resize(this->getLoadFactor()))
-        {
-            this->rehash();
-        }
+        this->rehash();
     }
     return true;
 }
@@ -368,11 +367,31 @@ template <typename T> T HashTable<T>::find(const T* item) const
     {
         t = temp->find(item);
     }
-    catch (ExceptionLinkedListAccess& e)
+    catch (ExceptionLinkedListAccess*)
     {
-        throw ExceptionHashTableAccess();
+        throw new ExceptionHashTableAccess();
     }
     return t;
+}
+
+template <typename T> void HashTable<T>::fill(TemplatedArray<T>& arr)
+{
+    unsigned long size = arr.getSize();
+    unsigned long i = 0;
+    
+    while(i<size)
+    {
+        T* item = new T(arr.get(i));
+        this->add(item, this->table);
+        this->size++;
+        i++;
+    }
+    
+    if(getLoadFactor() > this->maxLoadFactor)
+    {
+        resize(getLoadFactor());
+        rehash();
+    }
 }
 
 template <typename T> unsigned long HashTable<T>::getSize() const

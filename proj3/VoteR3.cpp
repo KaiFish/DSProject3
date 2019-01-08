@@ -48,7 +48,6 @@ bool isValid(NvraRecord& rec);                                                  
 bool isInvalidData(NvraRecord& rec, int& line, vector<int>& fileIDs);           //checks for any invalid data, prints when found
 void transfer(string fileName, fstream& inF);                                   //retrieves records from files
 void list2array();
-void makeHash();
 void mergeHash();
 void purgeHash();
 int extract();
@@ -66,7 +65,8 @@ int main()
     {
         return 42;
     }
-    makeHash();
+    hashT = new HashTable<NvraRecord>(c, h, arr->getSize());
+    hashT->fill(*arr);
     menu();
     return 0;
 }
@@ -507,21 +507,6 @@ void list2array()
     arr = new_arr;
 }
 
-void makeHash()
-{
-    
-    unsigned long size = arr->getSize();
-    unsigned long i = 0;
-    hashT = new HashTable<NvraRecord>(c, h, size);
-    
-    while(i<size)
-    {
-        NvraRecord* item = new NvraRecord(arr->get(i));
-        hashT->insert(item);
-        i++;
-    }
-}
-
 void mergeHash()
 {
     unsigned long size = arr->getSize();
@@ -534,18 +519,6 @@ void mergeHash()
         {
             hashT->insert(item);
         }
-        i++;
-    }
-}
-
-void purgeHash()
-{
-    unsigned long size = arr->getSize();
-    unsigned long i = 0;
-    while(i<size)
-    {
-        NvraRecord* item = new NvraRecord(arr->get(i));
-        hashT->remove(item);
         i++;
     }
 }

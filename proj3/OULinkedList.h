@@ -255,7 +255,7 @@ template <typename T> T OULinkedList<T>::get() const
 {
     if(first == nullptr)
     {
-        throw ExceptionLinkedListAccess();
+        throw new ExceptionLinkedListAccess();
     }
     T* temp = this->first->data;
     return *temp;
@@ -265,7 +265,7 @@ template <typename T> T OULinkedList<T>::find(const T* item) const
 {
     if(this->first==nullptr)
     {
-        throw ExceptionLinkedListAccess();
+        throw new ExceptionLinkedListAccess();
     }
     else
     {
@@ -292,7 +292,7 @@ template <typename T> T OULinkedList<T>::find(const T* item) const
         }
         else
         {
-            throw ExceptionLinkedListAccess();
+            throw new ExceptionLinkedListAccess();
         }
     }
 }
