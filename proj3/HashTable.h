@@ -7,6 +7,8 @@
 #include "OULinkedListEnumerator.h"
 #include "Hasher.h"
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 const unsigned int SCHEDULE_SIZE = 25;            // the number of items in the size schedule
 const unsigned int SCHEDULE[SCHEDULE_SIZE] = { 1, 2, 5, 11, 23, 53, 107, 223, 449, 907, 1823, 3659, 7309, 14621, 29243, 58511, 117023, 234067, 468157, 936319, 1872667, 3745283, 7490573, 14981147, 29962343 };        // the size schedule (all primes)
@@ -31,6 +33,7 @@ private:
     unsigned int scheduleIndex = DEFAULT_SCHEDULE_INDEX;    // the index of current location in the size schedule
     unsigned long baseCapacity = DEFAULT_BASE_CAPACITY;        // the size of the array
     unsigned long totalCapacity = baseCapacity;                // the size of the array plus chains of more than one link
+    unsigned long cap = DEFAULT_BASE_CAPACITY;
     OULinkedList<T>** table = nullptr;                            // table will be an array of pointers to OULinkedLists of type T
     void setCapacity(unsigned long neededSize);
     OULinkedList<T>** makeTable();
@@ -240,16 +243,20 @@ template <typename T> unsigned long HashTable<T>::encode(const T* item) const
 
 template <typename T> bool HashTable<T>::resize(float load)
 {
-    if(load >= this->maxLoadFactor)
+    if(load > this->maxLoadFactor)
     {
         this->scheduleIndex++;
-        this->totalCapacity = SCHEDULE[this->scheduleIndex];
+        this->cap = this->baseCapacity;
+        this->baseCapacity = SCHEDULE[this->scheduleIndex];
+        this->totalCapacity = this->baseCapacity;
         return true;
     }
-    else if(load <= this->minLoadFactor)
+    else if(load < this->minLoadFactor)
     {
         this->scheduleIndex--;
-        this->totalCapacity = SCHEDULE[this->scheduleIndex];
+        this->cap = this->baseCapacity;
+        this->baseCapacity = SCHEDULE[this->scheduleIndex];
+        this->totalCapacity = this->baseCapacity;
         return true;
     }
     return false;
@@ -258,8 +265,7 @@ template <typename T> bool HashTable<T>::resize(float load)
 template <typename T> void HashTable<T>::rehash()
 {
     OULinkedList<T>** old = this->table;
-    unsigned long oldCap = this->baseCapacity;
-    this->baseCapacity = this->totalCapacity;
+    unsigned long oldCap = this->cap;
     OULinkedList<T>** neu = makeTable();
     
     unsigned long i = 0;
@@ -296,6 +302,7 @@ template <typename T> string HashTable<T>::format(float num) const
 
 template <typename T> string HashTable<T>::getStats() const
 {
+    
     string str = "Base Capacity: " + to_string(this->baseCapacity) + "; Total Capacity: " + to_string(this->totalCapacity) + "; Load Factor: " + format(getLoadFactor());
     return str;
 }
@@ -306,15 +313,15 @@ template <typename T> bool HashTable<T>::insert(const T* item)
     {
         return false;
     }
-    if(this->totalCapacity > this->baseCapacity)
+    this->add(item, this->table);
+    this->size++;
+    if(this->totalCapacity > this->baseCapacity || getLoadFactor() > this->maxLoadFactor)
     {
         if(this->resize(this->getLoadFactor()))
         {
             this->rehash();
         }
     }
-    this->add(item, this->table);
-    this->size++;
     return true;
 }
 
@@ -336,14 +343,19 @@ template <typename T> bool HashTable<T>::remove(const T* item)
     {
         return false;
     }
-    unsigned long index = this->encode(item);
-    OULinkedList<T>* temp = this->table[index];
-    temp->remove(item);
-    this->size--;
     if(this->resize(this->getLoadFactor()))
     {
         this->rehash();
     }
+    unsigned long index = this->encode(item);
+    OULinkedList<T>* temp = this->table[index];
+    unsigned long s1 = temp->getSize();
+    temp->remove(item);
+    if(s1!=1 && temp->getSize()<s1)
+    {
+        this->totalCapacity--;
+    }
+    this->size--;
     return true;
 }
 

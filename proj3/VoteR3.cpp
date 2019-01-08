@@ -31,6 +31,7 @@ TemplatedArray<NvraRecord>* arr = new TemplatedArray<NvraRecord>();
 bool isSorted = true;                                                          //flag for sort status
 int sortField = 0;
 HashTable<NvraRecord>* hashT;
+NvraHasher* h = new NvraHasher();
 
 void loadData();
 void menu();
@@ -60,7 +61,6 @@ string stats(int size);
 
 int main()
 {
-    hashT = nullptr;
     loadData();
     if(list->getSize() == 0)
     {
@@ -302,6 +302,7 @@ void purgeData()
                     if(isValid(*rec))
                     {
                         list->remove(rec);
+                        hashT->remove(rec);
                         valid++;
                     }
                 }
@@ -310,7 +311,6 @@ void purgeData()
         }
     }
     list2array();
-    //bpurgeHash();
     menu();
 }
 
@@ -509,10 +509,10 @@ void list2array()
 
 void makeHash()
 {
-    NvraHasher h = NvraHasher();
+    
     unsigned long size = arr->getSize();
     unsigned long i = 0;
-    hashT = new HashTable<NvraRecord>(c, &h, size);
+    hashT = new HashTable<NvraRecord>(c, h, size);
     
     while(i<size)
     {
@@ -538,7 +538,17 @@ void mergeHash()
     }
 }
 
-//void purgeHash();
+void purgeHash()
+{
+    unsigned long size = arr->getSize();
+    unsigned long i = 0;
+    while(i<size)
+    {
+        NvraRecord* item = new NvraRecord(arr->get(i));
+        hashT->remove(item);
+        i++;
+    }
+}
 
 int extract()                                                                   //this code is also used in NvraComparator
 {

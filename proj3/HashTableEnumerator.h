@@ -22,15 +22,15 @@ public:
 };
 
 // put implementation for HashTableEnumerator here
-
+/*
 template <typename T> HashTableEnumerator<T>::HashTableEnumerator(HashTable<T>* hashTable)
 {
     this->hashTable = hashTable;
 }
-/*
+
 template <typename T> HashTableEnumerator<T>::~HashTableEnumerator()
 {
-    
+    bucket = 0;
 }
 
 template <typename T> bool HashTableEnumerator<T>::hasNext()
