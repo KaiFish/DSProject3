@@ -53,6 +53,8 @@ public:
     unsigned long getSize() const;                    // returns the current number of items in the list
     
     OULinkedListEnumerator<T> enumerator() const;    // create an enumerator for this linked list
+    
+    OULinkedListEnumerator<T>* eNum() const;
 };
 
 template <typename T> std::ostream& operator<<(std::ostream& os, const OULinkedList<T>& ll)
@@ -60,12 +62,9 @@ template <typename T> std::ostream& operator<<(std::ostream& os, const OULinkedL
     OULinkedListEnumerator<T> e = ll.enumerator();
     while(e.hasNext())
     {
-        T item = *e.currentData();
+        T item = e.next();
         os << item << endl;
-        e.next();
     }
-    T item = *e.currentData();
-    os << item << endl;
     return os;
 }
 template <typename T> OULinkedList<T>::OULinkedList(Comparator<T>* comparator)
@@ -304,8 +303,13 @@ template <typename T> unsigned long OULinkedList<T>::getSize() const
 
 template <typename T> OULinkedListEnumerator<T> OULinkedList<T>::enumerator() const
 {
-    OULinkedListEnumerator<T> e = OULinkedListEnumerator<T>(first);
-    return e;
+    OULinkedListEnumerator<T>* e = new OULinkedListEnumerator<T>(first);
+    return *e;
+}
+
+template <typename T> OULinkedListEnumerator<T>* OULinkedList<T>::eNum() const
+{
+    return new OULinkedListEnumerator<T>(first);
 }
 
 #endif // !OU_LINKED_LIST

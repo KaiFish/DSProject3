@@ -496,13 +496,9 @@ void list2array()
     OULinkedListEnumerator<NvraRecord> en = list->enumerator();
     while(en.hasNext())
     {
-        NvraRecord rec = *en.currentData();
+        NvraRecord rec = en.next();
         new_arr->add(&rec);
-        en.next();
     }
-    NvraRecord rec = *en.currentData();
-    new_arr->add(&rec);
-    
     
     arr = new_arr;
 }

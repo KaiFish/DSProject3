@@ -88,30 +88,15 @@ template <typename T> std::ostream& operator<<(std::ostream& os, const HashTable
     {
         OULinkedList<T>* temp = ht.table[i];
         OULinkedListEnumerator<T> e = temp->enumerator();
-        T* ptr = e.currentData();
-        if(ptr == nullptr)
+        if(e.hasNext())
         {
-            i++;
+            os << i << ": " << e.next() << std::endl << std::endl;
         }
-        else if(e.hasNext())
+        while(e.hasNext())
         {
-            os << i << ": " << *ptr << std::endl << '\n';       //print first
-            e.next();
-            while(e.hasNext())
-            {
-                T item = *e.currentData();
-                os << "OVERFLOW: " << item << std::endl;
-                e.next();
-            }
-            T item = *e.currentData();                          //print last
-            os << "OVERFLOW: " << item << std::endl << '\n';
-            i++;
+            os << "OVERFLOW: " << e.next() << std::endl;
         }
-        else
-        {
-            os << i << ": " << *ptr << std::endl << '\n';       //print only item
-            i++;
-        }
+        i++;
     }
     os << ht.getStats();
     return os;
@@ -192,14 +177,12 @@ template <typename T> void HashTable<T>::add(const T* item, OULinkedList<T>** t)
 {
     unsigned long index = this->encode(item);
     OULinkedList<T>* temp = t[index];
-    OULinkedListEnumerator<T> e = temp->enumerator();
-    T* ptr = e.currentData();
-    temp->insert(item);
-    if(ptr != nullptr)
+    if(temp->getSize() > 0)
     {
         this->totalCapacity++;
     }
-    return;
+    temp->insert(item);
+    
 }
 
 template <typename T> bool HashTable<T>::has(const T* item)
@@ -208,28 +191,19 @@ template <typename T> bool HashTable<T>::has(const T* item)
     unsigned long index = this->encode(item);
     OULinkedList<T>* temp = this->table[index];
     OULinkedListEnumerator<T> e = temp->enumerator();
+    if(!e.hasNext())
+    {
+        return found;
+    }
     while(e.hasNext())
     {
-        T item2 = *e.currentData();
+        T item2 = e.next();
         int c = this->comparator->compare(*item, item2);
         if(c == 0)
         {
             found = true;
             return found;
         }
-        e.next();
-    }
-    T* ptr = e.currentData();
-    if(ptr == nullptr)
-    {
-        return found;
-    }
-    T item2 = *ptr;                      //check last
-    int c = this->comparator->compare(*item, item2);
-    if(c == 0)
-    {
-        found = true;
-        return found;
     }
     return found;
 }
@@ -278,13 +252,7 @@ template <typename T> void HashTable<T>::rehash()
         OULinkedListEnumerator<T> e = temp->enumerator();
         while(e.hasNext())
         {
-            T* item = new T(*e.currentData());
-            add(item, neu);
-            e.next();
-        }
-        T* item = e.currentData();
-        if(item != nullptr)
-        {
+            T* item = new T(e.next());
             add(item, neu);
         }
         i++;

@@ -11,15 +11,16 @@ class OULinkedListEnumerator : public Enumerator<T>
 {
 private:
     OULink<T>* current;
+    bool first = true;
+    
 public:
     OULinkedListEnumerator(OULink<T>* first);
     virtual ~OULinkedListEnumerator();
-    bool hasNext();
+    bool hasNext() const;
     T next();
-    T peek();
-    OULink<T>* curr();
-    T* currentData();
+    T peek() const;
 };
+
 template <typename T> OULinkedListEnumerator<T>::OULinkedListEnumerator(OULink<T>* first)
 {
     this->current = first;
@@ -30,13 +31,11 @@ template <typename T> OULinkedListEnumerator<T>::~OULinkedListEnumerator()
     this->current = nullptr;
 }
 
-template <typename T> bool OULinkedListEnumerator<T>::hasNext()
+template <typename T> bool OULinkedListEnumerator<T>::hasNext() const
 {
-    if(this->current == nullptr || this->current->next == nullptr)
-    {
-        return false;
-    }
-    return true;
+    if(first) return this->current != nullptr;
+    else return this->current->next != nullptr;
+    
 }
 
 template <typename T> T OULinkedListEnumerator<T>::next()
@@ -45,35 +44,46 @@ template <typename T> T OULinkedListEnumerator<T>::next()
     {
         throw new ExceptionEnumerationBeyondEnd();
     }
-    T* temp = this->current->data;
+    
+    if(this->first)
+    {
+        T* temp = this->current->data;
+        this->first = false;
+        return *temp;
+    }
+    
     this->current = this->current->next;
+    
+    if(this->current == nullptr)
+    {
+        throw new ExceptionEnumerationBeyondEnd();
+    }
+    
+    T* temp = this->current->data;
     return *temp;
 }
 
-template <typename T> T OULinkedListEnumerator<T>::peek()
+template <typename T> T OULinkedListEnumerator<T>::peek() const
 {
     if(this->current == nullptr)
     {
         throw new ExceptionEnumerationBeyondEnd();
     }
-    OULink<T>* t = this->current;
-    T* temp = t->data;
+    
+    if(this->first)
+    {
+        T* temp = this->current->data;
+        return *temp;
+    }
+    
+    if(this->current->next == nullptr)
+    {
+        throw new ExceptionEnumerationBeyondEnd();
+    }
+    
+    T* temp =  this->current->next->data;
     return *temp;
 }
 
-template <typename T> OULink<T>* OULinkedListEnumerator<T>::curr()
-{
-    return this->current;
-}
-
-template <typename T> T* OULinkedListEnumerator<T>::currentData()
-{
-    OULink<T>* curr = this->current;
-    if(curr == nullptr)
-    {
-        return nullptr;
-    }
-    return curr->data;
-}
 
 #endif // !OU_LINKED_LIST_ENUMERATOR
