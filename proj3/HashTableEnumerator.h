@@ -13,20 +13,16 @@ private:
     unsigned long bucket = 0;                                // the current bucket during the enumeration process
     OULinkedListEnumerator<T>* chainEnumerator = NULL;        // used to move through the linked list of the current bucket
     HashTable<T>* hashTable = NULL;                            // pointer to the HashTable being enumerated
-    void* ptr = nullptr;
     
     unsigned long numBuckets = 0;
-    unsigned long index = 0;
-    void fill();
-    bool checkBucket();
-    bool advanceBucket();
+    void go2First();
     // you may add additional member variables and functions here to support the operation of your code
 public:
     HashTableEnumerator(HashTable<T>* hashTable);            // constructor needs a pointer to the HashTable to be enumerated
     virtual ~HashTableEnumerator();
-    bool hasNext() const;                                    // true if there are elements that have not yet been returned via next()
+    bool hasNext();                                    // true if there are elements that have not yet been returned via next()
     T next();                                                // throws ExceptionEnumerationBeyondEnd if no next item is available
-    T peek() const;                                            // throws ExceptionEnumerationBeyondEnd if no next item is available
+    T peek();                                            // throws ExceptionEnumerationBeyondEnd if no next item is available
 };
 
 // put implementation for HashTableEnumerator here
@@ -37,12 +33,13 @@ template <typename T> HashTableEnumerator<T>::HashTableEnumerator(HashTable<T>* 
     this->numBuckets = this->hashTable->baseCapacity;
     OULinkedListEnumerator<T> e = this->hashTable->table[this->bucket]->enumerator();
     this->chainEnumerator = &e;
-    fill();
-    this->index = 0;
-    if(sizeof(this->ptr) == 0)
+    
+    if(this->hashTable->getSize() == 0)
     {
         throw new ExceptionHashTableAccess();
     }
+    
+    //this->go2First();
 }
 
 template <typename T> HashTableEnumerator<T>::~HashTableEnumerator()
@@ -50,84 +47,124 @@ template <typename T> HashTableEnumerator<T>::~HashTableEnumerator()
     bucket = 0;
 }
 
-template <typename T> void HashTableEnumerator<T>::fill()
+template <typename T> void HashTableEnumerator<T>::go2First()
 {
-    unsigned long size = this->hashTable->size;
-    T* arr = new T[size];
-    bool notEnd = true;
-    while(checkBucket() && notEnd)
+    OULinkedListEnumerator<T> e = this->hashTable->table[this->bucket]->enumerator();
+    if(e.currentData() == nullptr)
     {
-        arr[this->index] = *(this->chainEnumerator->currentData());
-        index++;
-        if(this->chainEnumerator->hasNext())
-        {
-            this->chainEnumerator->next();
-        }
-        else
-        {
-            notEnd = advanceBucket();
-        }
-    }
-    this->ptr = &arr;
-}
-
-template <typename T> bool HashTableEnumerator<T>::checkBucket()
-{
-    bool notEnd = true;
-    while(this->chainEnumerator->currentData() == nullptr && notEnd)
-    {
-        notEnd = advanceBucket();
-    }
-    return notEnd;
-}
-
-template <typename T> bool HashTableEnumerator<T>::advanceBucket()
-{
-    this->bucket++;
-    if(this->bucket < this->numBuckets)
-    {
+        this->bucket++;
         OULinkedListEnumerator<T> e = this->hashTable->table[this->bucket]->enumerator();
+        while(e.currentData() == nullptr)
+        {
+            this->bucket++;
+            e = this->hashTable->table[this->bucket]->enumerator();
+        }
         this->chainEnumerator = &e;
-        return true;
     }
-    return false;
+    
+    if(this->chainEnumerator->currentData() == nullptr)
+    {
+        throw ExceptionHashTableAccess();
+    }
 }
 
-
-template <typename T> bool HashTableEnumerator<T>::hasNext() const
+template <typename T> bool HashTableEnumerator<T>::hasNext()
 {
-    T* arr = static_cast<T*>(this->ptr);
-    unsigned long nextI = this->index + 1;
-    if(arr[this->index] == nullptr || arr[nextI] == nullptr)
+    bool temp = this->chainEnumerator->hasNext();
+    if(!temp)
     {
-        return false;
+        unsigned long b = this->bucket;
+        while(!temp && b < this->numBuckets)
+        {
+            b++;
+            OULinkedListEnumerator<T> e = this->hashTable->table[b]->enumerator();
+            temp = e.hasNext();
+        }
+        if(!temp)
+        {
+            return false;
+        }
     }
     return true;
 }
 
 template <typename T> T HashTableEnumerator<T>::next()
 {
-    T* arr = static_cast<T*>(this->ptr);
-    if(!hasNext())
+    T* temp = this->chainEnumerator->currentData();
+    if(temp == nullptr)
     {
         throw new ExceptionEnumerationBeyondEnd();
     }
-    T temp1 = *arr[this->index];
-    T* temp2 = new T(temp1);
-    this->index++;
-    return *temp2;
+    else
+    {
+        if(this->chainEnumerator->hasNext())
+        {
+            this->chainEnumerator->next();
+        }
+        else
+        {
+            unsigned long b = this->bucket + 1;
+            OULinkedListEnumerator<T> e = this->hashTable->table[b]->enumerator();
+            while(e.currentData() == nullptr && b < this->numBuckets)
+            {
+                OULinkedListEnumerator<T> e = this->hashTable->table[b]->enumerator();
+                b++;
+                
+            }
+            if(b > this->numBuckets)
+            {
+                throw new ExceptionEnumerationBeyondEnd();
+            }
+            else
+            {
+                this->chainEnumerator = &e;
+            }
+        }
+    }
+    return *temp;
 }
 
-template <typename T> T HashTableEnumerator<T>::peek() const
+template <typename T> T HashTableEnumerator<T>::peek()
 {
-    T* arr = static_cast<T*>(this->ptr);
-    if(!hasNext())
+    T* temp = this->chainEnumerator->currentData();
+    if(temp == nullptr)
     {
         throw new ExceptionEnumerationBeyondEnd();
     }
-    T temp1 = *arr[this->index];
-    T* temp2 = new T(temp1);
-    return *temp2;
+    return *temp;
 }
 
 #endif // !HASH_TABLE_ENUMERATOR
+
+
+//if(hasNext())
+//{
+//    try
+//    {
+//        this->chainEnumerator->next();
+//    }
+//    catch(ExceptionEnumerationBeyondEnd*)
+//    {
+//        bool nextHas = true;
+//        unsigned long b = this->bucket;
+//        while(!nextHas && b < this->numBuckets)
+//        {
+//            b++;
+//            OULinkedListEnumerator<T> e = this->hashTable->table[b]->enumerator();
+//            nextHas = e.hasNext();
+//        }
+//        if(!nextHas)
+//        {
+//            throw new ExceptionEnumerationBeyondEnd();
+//        }
+//        else
+//        {
+//            OULinkedListEnumerator<T> e = this->hashTable->table[b]->enumerator();
+//            this->chainEnumerator = &e;
+//        }
+//    }
+//}
+//else
+//{
+//    throw new ExceptionEnumerationBeyondEnd();
+//    }
